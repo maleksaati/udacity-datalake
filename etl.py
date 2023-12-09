@@ -6,13 +6,6 @@ from pyspark.sql.functions import udf, col
 from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear, date_format
 
 
-config = configparser.ConfigParser()
-config.read('dl.cfg')
-
-os.environ['AWS_ACCESS_KEY_ID']=config['AWS_ACCESS_KEY_ID']
-os.environ['AWS_SECRET_ACCESS_KEY']=config['AWS_SECRET_ACCESS_KEY']
-
-
 def create_spark_session():
     spark = SparkSession \
         .builder \
@@ -96,14 +89,23 @@ def process_log_data(spark, input_data, output_data):
 
 
 def main():
+    config = configparser.ConfigParser()
+    config.read('dl.cfg')
+
+
+
+    os.environ['AWS_ACCESS_KEY_ID']=config['AWS_ACCESS_KEY_ID']
+    os.environ['AWS_SECRET_ACCESS_KEY']=config['AWS_SECRET_ACCESS_KEY']
+
     spark = create_spark_session()
+
     input_data = "s3a://udacity-dend/"
     output_data = "s3a//songsdatalake100/"
     
     process_song_data(spark, input_data, output_data)    
     process_log_data(spark, input_data, output_data)
 
-    
+
 
 
 if __name__ == "__main__":
