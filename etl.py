@@ -7,6 +7,15 @@ from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear, dat
 
 
 def create_spark_session():
+    """Create Spark Session.
+
+    Args:
+        no args.
+
+    Returns:
+        spark session object.
+
+    """
     spark = SparkSession \
         .builder \
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0") \
@@ -15,6 +24,17 @@ def create_spark_session():
 
 
 def process_song_data(spark, input_data, output_data):
+    """read (songs, artists) data from s3, and write it to datalake s3 (parquet)
+
+    Args:
+        spark: spark session.
+        input_data: source of songs data.
+        output_data: songs parqet output location.
+
+    Returns:
+        no returns.
+
+    """
     # get filepath to song data file
     song_data =  os.path.join(input_data , 'song_data/*/*/*/*.json')
 
@@ -30,12 +50,24 @@ def process_song_data(spark, input_data, output_data):
 
     # extract columns to create artists table
     artists_table = df.select('artist_id', 'artist_latitude', 'artist_longitude', 'artist_location', 'artist_name')
-    
+    artists_table = artists_table.dropDuplicates(['artist_id'])
+
     # write artists table to parquet files
     artists_table.write.mode('overwrite').parquet(output_data + "artists")
 
 
 def process_log_data(spark, input_data, output_data):
+    """read log data from s3, and extract 3 tables (users, timetable, songsplay), and write output to datalake s3 (parquet)
+
+    Args:
+        spark: spark session.
+        input_data: source of songs data.
+        output_data: songs parqet output location.
+
+    Returns:
+        no returns.
+    """
+        
     # get filepath to log data file
     log_data = os.path.join(input_data, "log_data/*/*/*.json")
 
