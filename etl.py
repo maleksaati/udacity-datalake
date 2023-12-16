@@ -85,19 +85,23 @@ def process_log_data(spark, input_data, output_data):
     # write users table to parquet files
     users_table.show(5)
     users_table.write.mode('overwrite').parquet(output_data + 'users')
-    
+     
     # create timestamp column from original timestamp column
-    get_timestamp = udf(lambda x: datetime.fromtimestamp(x / 1000.0))
+    get_timestamp = udf(lambda x: str(int(int(x)/1000.0)))
     df = df.withColumn('timestamp', get_timestamp(df['ts']))
-    
+
+    # create datetime column from original timestamp column
+    get_datetime = udf(lambda x: str(datetime.fromtimestamp(int(x)/1000.0)))
+    df = df.withColumn('datetime',get_datetime(df['ts']))
+
 
     # extract columns to create time table
-    time_table = df.select('ts', 'timestamp')
-    time_table = time_table.withColumn("hour", hour(time_table.timestamp))
-    time_table = time_table.withColumn("dayofmonth", dayofmonth(time_table.timestamp))
-    time_table = time_table.withColumn("weekofyear", weekofyear(time_table.timestamp))
-    time_table = time_table.withColumn("month", month(time_table.timestamp))
-    time_table = time_table.withColumn("year", year(time_table.timestamp))
+    time_table = df.select('ts', 'timestamp','datetime')
+    time_table = time_table.withColumn("hour", hour(time_table.datetime))
+    time_table = time_table.withColumn("dayofmonth", dayofmonth(time_table.datetime))
+    time_table = time_table.withColumn("weekofyear", weekofyear(time_table.datetime))
+    time_table = time_table.withColumn("month", month(time_table.datetime))
+    time_table = time_table.withColumn("year", year(time_table.datetime))
 
     
     # write time table to parquet files partitioned by year and month
@@ -110,10 +114,11 @@ def process_log_data(spark, input_data, output_data):
 
     # extract columns from joined song and log datasets to create songplays table 
     songplays_table = df.join(song_df, df.song == song_df.title, how='inner')
-
+    songplays_table.show(5)
     songplays_table = songplays_table.select(
-                                col("start_time"),col("userId").alias("user_id"),"level","song_id","artist_id", \
-                                col("sessionId").alias("session_id"), col("location"), col("userAgent").alias("user_agent"))
+                                col("datetime").alias("start_time"),col("userId").alias("user_id"),"level","song_id","artist_id", \
+                                col("sessionId").alias("session_id"), col("location"), col("userAgent").alias("user_agent"), year('datetime').alias('year'),
+                                        month('datetime').alias('month'))
 
     # write songplays table to parquet files partitioned by year and month
     songplays_table.show(5)
